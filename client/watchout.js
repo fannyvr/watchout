@@ -31,164 +31,182 @@
               .attr('width', gameOption.width)
               .attr('height', gameOption.height);
 
-var gameUpdateScore = function(){
-  return d3.select('.current').text(gameStats.score.toString())
-};
-
-var updateBestScore = function(){
-  gameStats.bestScore = Math.max(gameStats.score, gameStats.bestScore)
-  d3.select('.high').text(gameStats.bestScore.toString())
-};
-
-Player = function(){
-  this.path = 'm-7.5,1.62413c0,-5.04095 4.08318,-9.12413 9.12414,-9.12413c5.04096,0 9.70345,5.53145 11.87586,9.12413c-2.02759,2.72372 -6.8349,9.12415 -11.87586,9.12415c-5.04096,0 -9.12414,-4.08318 -9.12414,-9.12415z';
-  this.fill = '#ff6600';
-  this.x = gameOption.width/2;
-  this.y = gameOption.height/2;
-  this.angle = 0;
-  this.r = 5;
-};
-
-Player.prototype.render = function(to){
-  this.el = to.append('svg:path')
-                      .attr('d',this.path())
-                      .attr('fill',this.fill);
-  this.setUpDragging()
-  return this;
-};
-
-Player.prototype.getX = function(){
-  return this.x;
-};
-
-Player.prototype.getY = function(){
-  return this.y;
-};
-
-Player.prototype.setX = function(x){
-  if(x <= gameOption.minX){
-    x = gameOption.minX;
-  }
-  if(x >= gameOption.x){
-    x = gameOption.maxX;
-  }
-  return this.x = x;
-};
-
-Player.prototype.setY = function(y){
-  if(y <= gameOption.minY){
-    y = gameOption.minY;
-  }
-  if(y >= gameOption.y){
-    y = gameOption.maY;
-  }
-  return this.y = y;
-};
-
-Player.prototype.transform = function(options){
-  this.angle = options.angle || this.angle;
-  this.setX(options.x || this.x);
-  this.setY(options.y || this.y);
-  return this.el.attr('transform', ("rotate(" + this.angle + "," + (this.getX()) + "," + (this.getY()) + ") ") + ("translate(" + (this.getX()) + "," + (this.getY()) + ")"));
-};
-
-Player.prototype.moveAbsolute = function(x,y){
-  return this.transform({
-    x:x,
-    y:y
-  });
-};
-
-Player.prototype.moveRelative = function(dx,dy){
-  return this.transform({
-    x: this.getX()+dx,
-    y: this.getY()+dy,
-    angle: 360*(Math.atan2(dy,dx)/(Math.PI*2))
-  });
-};
-
-Player.prototype.setUpDragging = function(){
-  var drag, dragMove, _this = this
-  dragMove = function(){
-    return _this.moveRelative(d3.event.dx, d3.event.dy);
+  var gameUpdateScore = function(){
+    return d3.select('.current').text(gameStats.score.toString())
   };
-  drag = d3.behavior.drag().on('drag', dragMove)
-  return this.el.call(drag)
-};
 
-new Player().render(gameBoard)
+  var updateBestScore = function(){
+    gameStats.bestScore = Math.max(gameStats.score, gameStats.bestScore)
+    d3.select('.high').text(gameStats.bestScore.toString())
+  };
 
+  Player = function(){
+    this.path = 'm-7.5,1.62413c0,-5.04095 4.08318,-9.12413 9.12414,-9.12413c5.04096,0 9.70345,5.53145 11.87586,9.12413c-2.02759,2.72372 -6.8349,9.12415 -11.87586,9.12415c-5.04096,0 -9.12414,-4.08318 -9.12414,-9.12415z';
+    this.fill = '#ff6600';
+    this.x = gameOption.width/2;
+    this.y = gameOption.height/2;
+    this.angle = 0;
+    this.r = 5;
+  };
 
-createEnemies = function(){
-  return _.range(0, gameOption.enemies).map(function(item){
-    return {
-      id : item,
-      x : Math.random()*100,
-      y : Math.random()*100
-    };
-  });
-};
+  Player.prototype.render = function(to){
+    this.el = to.append('svg:path')
+                        .attr('d',this.path())
+                        .attr('fill',this.fill);
+    this.setUpDragging()
+    return this;
+  };
 
-render = function(enemieData){
-  var checkCollision, enemies, onCollision, tweenWithCollisionDetection;
-  enemies = gameBoard.selectAll('circle.enemy')
-  .data(enemieData, function(d){
-    return d.id;
-  });
-  enemies.enter()
-  .append('svg:circle')
-  .attr('class', 'enemy')
-  .attr('cx', function(enemy){
-    return axes.x(enemy.x);
-  });
-  .attr('cy', function(enemy){
-    return axes.y(enemy.y);
-  });
-  .attr('r', 0);
+  Player.prototype.getX = function(){
+    return this.x;
+  };
 
-  enemies.exit().remove();
+  Player.prototype.getY = function(){
+    return this.y;
+  };
 
-  checkCollision = function(enemy, collidedCallback){
-    return _(players).each(function(player){
-      var radiusSum, separation, xDiff, yDiff;
+  Player.prototype.setX = function(x){
+    if(x <= gameOption.minX){
+      x = gameOption.minX;
+    }
+    if(x >= gameOption.x){
+      x = gameOption.maxX;
+    }
+    return this.x = x;
+  };
 
-      radiusSum = parseFloat(enemy.attr('r')) + player.r;
-      xDiff = parseFloat(enemy.attr('cx')) - player.x;
-      yDiff = parseFloat(enemy.attr('cs')) - player.y;
+  Player.prototype.setY = function(y){
+    if(y <= gameOption.minY){
+      y = gameOption.minY;
+    }
+    if(y >= gameOption.y){
+      y = gameOption.maY;
+    }
+    return this.y = y;
+  };
 
-      separation = Math.sqrt(Math.pow(xDiff,2) + Math.pow(yDiff,2));
-      if(separation < radiusSum){
-        return collidedCallback(player, enemy);
-      }
+  Player.prototype.transform = function(options){
+    this.angle = options.angle || this.angle;
+    this.setX(options.x || this.x);
+    this.setY(options.y || this.y);
+    return this.el.attr('transform', ("rotate(" + this.angle + "," + (this.getX()) + "," + (this.getY()) + ") ") + ("translate(" + (this.getX()) + "," + (this.getY()) + ")"));
+  };
+
+  Player.prototype.moveAbsolute = function(x,y){
+    return this.transform({
+      x:x,
+      y:y
     });
   };
 
-  onCollision = function(){
-    updateBestScore();
-    gameStats.score = 0;
-    return updateBestScore();
+  Player.prototype.moveRelative = function(dx,dy){
+    return this.transform({
+      x: this.getX()+dx,
+      y: this.getY()+dy,
+      angle: 360*(Math.atan2(dy,dx)/(Math.PI*2))
+    });
   };
 
-  tweenWithCollisionDetection = function(){
-
-  }
-};
-
-
-
-
-
-
+  Player.prototype.setUpDragging = function(){
+    var drag, dragMove, _this = this
+    dragMove = function(){
+      return _this.moveRelative(d3.event.dx, d3.event.dy);
+    };
+    drag = d3.behavior.drag().on('drag', dragMove)
+    return this.el.call(drag)
+  };
 
 
 
+  createEnemies = function(){
+    return _.range(0, gameOption.enemies).map(function(item){
+      return {
+        id : item,
+        x : Math.random()*100,
+        y : Math.random()*100
+      };
+    });
+  };
+
+  render = function(enemieData){
+    var checkCollision, enemies, onCollision, tweenWithCollisionDetection;
+    enemies = gameBoard.selectAll('circle.enemy')
+    .data(enemieData, function(d){
+      return d.id;
+    });
+    enemies.enter()
+    .append('svg:circle')
+    .attr('class', 'enemy')
+    .attr('cx', function(enemy){
+      return axes.x(enemy.x);
+    });
+    .attr('cy', function(enemy){
+      return axes.y(enemy.y);
+    });
+    .attr('r', 0);
+
+    enemies.exit().remove();
+
+    checkCollision = function(enemy, collidedCallback){
+      return _(players).each(function(player){
+        var radiusSum, separation, xDiff, yDiff;
+
+        radiusSum = parseFloat(enemy.attr('r')) + player.r;
+        xDiff = parseFloat(enemy.attr('cx')) - player.x;
+        yDiff = parseFloat(enemy.attr('cs')) - player.y;
+
+        separation = Math.sqrt(Math.pow(xDiff,2) + Math.pow(yDiff,2));
+        if(separation < radiusSum){
+          return collidedCallback(player, enemy);
+        }
+      });
+    };
+
+    onCollision = function(){
+      updateBestScore();
+      gameStats.score = 0;
+      return updateBestScore();
+    };
+
+    tweenWithCollisionDetection = function(endData){
+      enemy = d3.select(this);
+      var startPos = {
+        x: parseFloat(enemy.attr('cx'));
+        y: parseFloat(enemy.attr('cy'));
+      };
+      return function(t) {
+        checkCollision(enemy, onCollision);
+        var enemyNextPos = {
+          x: startPos.x + (endPos.x - startPos.x) * t;
+          y: startPos.y + (endPos.y - startPos.y) * t;
+        };
+        return enemy.attr('cx', enemyNextPos.x)
+                    .attr('cy', enemyNexPos.y);
+      };
+    }
+
+    return enemies.transition().duration(500).attr('r', 10)
+                              .transition().duration(2000).tween('custom', tweenWithCollisionDetection);
+  };
+
+  var play = function() {
+    var gameTurn = function() {
+      var newEnemyPosition = createEnemies();
+      return render(newEnemyPosition);
+    };
+    var increaseScore = function() {
+      gameStats.score += 1;
+      return updateScore();
+    };
+    gameTurn();
+    setInterval(gameTurn, 2000);
+    return setInterval(increaseScore, 50);
+
+  };
 
 
-
-
-
-
-
+  new Player().render(gameBoard);
+  play();
 
 
 
