@@ -3,7 +3,7 @@
 
 (function(){
 
-  var gameOption, gameStats, axes, gameBoard, Player;
+  var gameOption, gameStats, axes, gameBoard, Player, createEnemies, render;
 
   gameOption = {
     height : 800,
@@ -26,8 +26,13 @@
     y : d3.scale.linear().domain([0,100]).range([0,gameOption.height])
   };
 
+  gameBoard = d3.select('.container')
+              .append('svg:svg')
+              .attr('width', gameOption.width)
+              .attr('height', gameOption.height);
+
 var gameUpdateScore = function(){
-  d3.select('.current').text(gameStats.score.toString())
+  return d3.select('.current').text(gameStats.score.toString())
 };
 
 var updateBestScore = function(){
@@ -111,7 +116,63 @@ Player.prototype.setUpDragging = function(){
   return this.el.call(drag)
 };
 
+new Player().render(gameBoard)
 
+
+createEnemies = function(){
+  return _.range(0, gameOption.enemies).map(function(item){
+    return {
+      id : item,
+      x : Math.random()*100,
+      y : Math.random()*100
+    };
+  });
+};
+
+render = function(enemieData){
+  var checkCollision, enemies, onCollision, tweenWithCollisionDetection;
+  enemies = gameBoard.selectAll('circle.enemy')
+  .data(enemieData, function(d){
+    return d.id;
+  });
+  enemies.enter()
+  .append('svg:circle')
+  .attr('class', 'enemy')
+  .attr('cx', function(enemy){
+    return axes.x(enemy.x);
+  });
+  .attr('cy', function(enemy){
+    return axes.y(enemy.y);
+  });
+  .attr('r', 0);
+
+  enemies.exit().remove();
+
+  checkCollision = function(enemy, collidedCallback){
+    return _(players).each(function(player){
+      var radiusSum, separation, xDiff, yDiff;
+
+      radiusSum = parseFloat(enemy.attr('r')) + player.r;
+      xDiff = parseFloat(enemy.attr('cx')) - player.x;
+      yDiff = parseFloat(enemy.attr('cs')) - player.y;
+
+      separation = Math.sqrt(Math.pow(xDiff,2) + Math.pow(yDiff,2));
+      if(separation < radiusSum){
+        return collidedCallback(player, enemy);
+      }
+    });
+  };
+
+  onCollision = function(){
+    updateBestScore();
+    gameStats.score = 0;
+    return updateBestScore();
+  };
+
+  tweenWithCollisionDetection = function(){
+
+  }
+};
 
 
 
